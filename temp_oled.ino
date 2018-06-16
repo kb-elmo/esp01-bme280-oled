@@ -130,8 +130,6 @@ void loop() {
   utc = epochTime;
 
   // Then convert the UTC UNIX timestamp to local time
-  TimeChangeRule usEDT = {"EDT", Second, Sun, Mar, 2, -300};  //UTC - 5 hours - change this as needed
-  TimeChangeRule usEST = {"EST", First, Sun, Nov, 2, -360};   //UTC - 6 hours - change this as needed
   TimeChangeRule MET = {"CEST", First, Sun, Nov, 2, +120};   //UTC - 6 hours - change this as needed
   TimeChangeRule CEST = {"MET", Second, Sun, Nov, 2, +60};   //UTC - 6 hours - change this as needed
   Timezone europe(MET, CEST);
