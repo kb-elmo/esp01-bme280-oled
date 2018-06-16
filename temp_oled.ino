@@ -22,9 +22,6 @@ const char* ssid = ""; // Wifi Network 1
 const char* password = "";
 String date;
 String t;
-const char * days[] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"} ;
-const char * months[] = {"Jan", "Feb", "Mar", "Apr", "May", "June", "July", "Aug", "Sep", "Oct", "Nov", "Dec"} ;
-const char * ampm[] = {"AM", "PM"} ;
 
 #define OLED_ADDR   0x3C
 
