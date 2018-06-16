@@ -18,37 +18,39 @@
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, NTP_ADDRESS, NTP_OFFSET, NTP_INTERVAL);
 
+// WiFi Settings
 const char* ssid = ""; // Wifi Network 1
 const char* password = "";
 String date;
 String t;
 
+// OLED Settings
 #define OLED_ADDR   0x3C
-
 #define OLED_WIDTH 128
 #define CHAR_WIDTH 6
 
+// Define the OLED and BME objects
 Adafruit_SSD1306 display(-1);
 Adafruit_BME280 bme; // I2C
 
+// Check if OLED lib is correct
 #if (SSD1306_LCDHEIGHT != 64)
 #error("Height incorrect, please fix Adafruit_SSD1306.h!");
 #endif
 
 void setup() {
-  pinMode(3, FUNCTION_3); 
   timeClient.begin();   // Start the NTP UDP client
+  // Define pin 0 and 2 for i2c
   Wire.pins(0, 2);
   Wire.begin();
+
   // initialize and clear display
   display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR);
-  
-  // display a line of text
   display.setTextSize(1);
   display.setTextColor(WHITE);
-  
   display.clearDisplay();
   display.display();
+
   // Connect Wifi
   display.setCursor(0,0);
   display.print("Connecting WiFi");
@@ -58,6 +60,7 @@ void setup() {
   display.display();
   WiFi.begin(ssid, password);
   int trycount = 0;
+  // Try connecting first network
   while (WiFi.status() != WL_CONNECTED && trycount != 30 )
   {
     delay(500);
@@ -76,10 +79,12 @@ void setup() {
   display.display();
   WiFi.begin(ssid, password);
   trycount = 0;
+  // try connecting fallback network
   while (WiFi.status() != WL_CONNECTED)
   {
     delay(500);
   }
+  // display IP adress
   display.setCursor(0,32);
   display.print("Connected!");
   display.setCursor(0,48);
@@ -89,6 +94,7 @@ void setup() {
   display.clearDisplay();
   display.display();
 
+  // Initialize and check BME280 sensor
   bool status = bme.begin(0x76);  
   if (!status) {
     display.setCursor(0,0);
@@ -102,16 +108,19 @@ void setup() {
   }
 }
 
+// right align text
 void printRight( const char* data, int line ) {
   display.setCursor((OLED_WIDTH - (strlen(data) * CHAR_WIDTH)), line);
   display.print(data);
 }
 
+// center size 2 text
 void printCenterBig( const char* data, int line ) {
   display.setCursor(((OLED_WIDTH / 2) - (strlen(data) * CHAR_WIDTH)), line);
   display.print(data);
 }
 
+// center size 1 text
 void printCenter( const char* data, int line ) {
   display.setCursor(((OLED_WIDTH / 2) - ((strlen(data) * CHAR_WIDTH) / 2)), line);
   display.print(data);
@@ -135,7 +144,7 @@ void loop() {
   Timezone europe(MET, CEST);
   local = europe.toLocal(utc);
 
-  // now format the Time variables into strings with proper names for month, day etc
+  // now format the Time variables into strings
   date += day(local);
   date += ".";
   date += month(local);
@@ -149,15 +158,20 @@ void loop() {
     t += "0";
   t += minute(local);
   
+  // Read data from the bme280 sensor
   float humi = bme.readHumidity();
   float temp = bme.readTemperature();
   float pres = (bme.readPressure() / 100.0F);
+
+  // display date and time
   display.setTextSize(1);
   display.clearDisplay();
   display.setCursor(0,0);
   display.print(date);
   const char* t_char = t.c_str();
   printRight(t_char, 0);
+
+  // display sensor data (first 2 lines large)
   display.setTextSize(2);
   display.setCursor(0,16);
   String t_text =  String(temp)+" "+String(char(0xF7))+"C";
@@ -172,6 +186,7 @@ void loop() {
   const char* p_data = p_text.c_str();
   printCenter(p_data, 56);
   display.display();
+  // sleep for 30 secs.
   delay(30000);
 }
 
