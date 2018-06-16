@@ -17,15 +17,11 @@
 // Set up the NTP UDP client
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, NTP_ADDRESS, NTP_OFFSET, NTP_INTERVAL);
-
-// WiFi Settings
-const char* ssid = ""; // Wifi Network 1
-const char* password = "";
 String date;
 String t;
 
 // OLED Settings
-#define OLED_ADDR   0x3C
+#define OLED_ADDR  0x3C
 #define OLED_WIDTH 128
 #define CHAR_WIDTH 6
 
@@ -37,6 +33,58 @@ Adafruit_BME280 bme; // I2C
 #if (SSD1306_LCDHEIGHT != 64)
 #error("Height incorrect, please fix Adafruit_SSD1306.h!");
 #endif
+
+bool connect_wifi(const char* ssid, const char* password, int retry) {
+  display.clearDisplay();
+  display.setCursor(0,0);
+  display.print("Connecting WiFi");
+  display.setCursor(0,16);
+  display.print("SSID: ");
+  printRight(ssid, 16);
+  display.display();
+  WiFi.begin(ssid, password);
+  int trycount = 0;
+  while ( WiFi.status() != WL_CONNECTED && trycount != retry )
+  {
+    delay(500);
+    trycount += 1;
+  }
+  if ( WiFi.status() == WL_CONNECTED ) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+bool connect_loop() {
+  // Main network
+  const char* ssid = "********";
+  const char* password = "********";
+  if ( connect_wifi(ssid, password, 30) ) {
+    return true;
+  } else {
+    // Fallback network
+    ssid = "********";
+    password = "********";
+    if ( connect_wifi(ssid, password, 30) ) {
+      return true;
+    } else {
+      printCenter("Could not connect", 32);
+      return false;
+    }
+  }
+}
+
+void display_ip() {
+  display.setCursor(0,32);
+  display.print("Connected!");
+  display.setCursor(0,48);
+  display.print(WiFi.localIP());
+  display.display();
+  delay(3000);
+  display.clearDisplay();
+  display.display();
+}
 
 void setup() {
   timeClient.begin();   // Start the NTP UDP client
@@ -52,47 +100,14 @@ void setup() {
   display.display();
 
   // Connect Wifi
-  display.setCursor(0,0);
-  display.print("Connecting WiFi");
-  display.setCursor(0,16);
-  display.print("SSID: ");
-  printRight(ssid, 16);
-  display.display();
-  WiFi.begin(ssid, password);
-  int trycount = 0;
-  // Try connecting first network
-  while (WiFi.status() != WL_CONNECTED && trycount != 30 )
-  {
-    delay(500);
-    trycount += 1;
+  while ( true ) {
+    if ( !connect_loop() ) {
+      delay(30000);
+    } else {
+      break;
+    }
   }
-  const char* ssid = ""; // Wifi Network 2
-  const char* password = "";
-  display.clearDisplay();
-  display.display();
-  // Connect Wifi
-  display.setCursor(0,0);
-  display.print("Connecting WiFi");
-  display.setCursor(0,16);
-  display.print("SSID: ");
-  printRight(ssid, 16);
-  display.display();
-  WiFi.begin(ssid, password);
-  trycount = 0;
-  // try connecting fallback network
-  while (WiFi.status() != WL_CONNECTED)
-  {
-    delay(500);
-  }
-  // display IP adress
-  display.setCursor(0,32);
-  display.print("Connected!");
-  display.setCursor(0,48);
-  display.print(WiFi.localIP());
-  display.display();
-  delay(3000);
-  display.clearDisplay();
-  display.display();
+  display_ip();
 
   // Initialize and check BME280 sensor
   bool status = bme.begin(0x76);  
@@ -139,8 +154,8 @@ void loop() {
   utc = epochTime;
 
   // Then convert the UTC UNIX timestamp to local time
-  TimeChangeRule MET = {"CEST", First, Sun, Nov, 2, +120};   //UTC - 6 hours - change this as needed
-  TimeChangeRule CEST = {"MET", Second, Sun, Nov, 2, +60};   //UTC - 6 hours - change this as needed
+  TimeChangeRule MET = {"CEST", First, Sun, Nov, 2, +120};   //UTC + 2 hours
+  TimeChangeRule CEST = {"MET", Second, Sun, Nov, 2, +60};   //UTC + 1 hour
   Timezone europe(MET, CEST);
   local = europe.toLocal(utc);
 
@@ -173,14 +188,12 @@ void loop() {
 
   // display sensor data (first 2 lines large)
   display.setTextSize(2);
-  display.setCursor(0,16);
-  String t_text =  String(temp)+" "+String(char(0xF7))+"C";
+  String t_text =  String(temp)+" "+String(char(0xF7))+"C"; // 0xF7 = Degree Symbol
   const char* t_data = t_text.c_str();
   printCenterBig(t_data, 16);
-  display.setCursor(0,32);
   String h_text =  String(humi)+" %";
   const char* h_data = h_text.c_str();
-  printCenterBig(h_data, 32);
+  printCenterBig(h_data, 34);
   display.setTextSize(1);
   String p_text =  String(pres)+" hPa";
   const char* p_data = p_text.c_str();
@@ -189,4 +202,5 @@ void loop() {
   // sleep for 30 secs.
   delay(30000);
 }
+
 
