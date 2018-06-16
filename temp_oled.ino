@@ -19,6 +19,7 @@ WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, NTP_ADDRESS, NTP_OFFSET, NTP_INTERVAL);
 String date;
 String t;
+unsigned long epochTime;
 
 // OLED Settings
 #define OLED_ADDR  0x3C
@@ -141,13 +142,22 @@ void printCenter( const char* data, int line ) {
   display.print(data);
 }
 
+int t_update = 10;
+
 void loop() {
   date = "";  // clear the variables
   t = "";
   
-  // update the NTP client and get the UNIX UTC timestamp 
-  timeClient.update();
-  unsigned long epochTime =  timeClient.getEpochTime();
+  // Update NTP every 10 loops (5 mins)
+  if ( t_update >= 10 ) {
+    // update the NTP client and get the UNIX UTC timestamp 
+    timeClient.update();
+    epochTime =  timeClient.getEpochTime();
+    t_update = 0;
+  } else {
+    epochTime += 30;
+    t_update += 1;
+  }
 
   // convert received time stamp to time_t object
   time_t local, utc;
