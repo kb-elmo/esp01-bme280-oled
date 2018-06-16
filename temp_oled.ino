@@ -167,6 +167,8 @@ void loop() {
   date += year(local);
 
   // format the time to 24-hour format and no seconds
+  if(hour(local) < 10)
+    t += "0";
   t += hour(local);
   t += ":";
   if(minute(local) < 10)  // add a zero if minute is under 10
