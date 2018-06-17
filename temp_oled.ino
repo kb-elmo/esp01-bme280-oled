@@ -44,7 +44,7 @@ bool connect_wifi(const char* ssid, const char* password, int retry) {
   printRight(ssid, 16);
   display.display();
   WiFi.begin(ssid, password);
-  int trycount = 0;
+  uint8_t trycount = 0;
   while ( WiFi.status() != WL_CONNECTED && trycount != retry )
   {
     delay(500);
@@ -93,12 +93,14 @@ void setup() {
   Wire.pins(0, 2);
   Wire.begin();
 
-  // initialize and clear display
+  // initialize the display and show some text
   display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR);
-  display.setTextSize(1);
   display.setTextColor(WHITE);
   display.clearDisplay();
+  printCenterBig("BME-280", 0);
+  printCenter("Starting...", 32);
   display.display();
+  delay(5000);
 
   // Connect Wifi
   while ( true ) {
@@ -125,24 +127,26 @@ void setup() {
 }
 
 // right align text
-void printRight( const char* data, int line ) {
+void printRight( const char* data, uint8_t line ) {
   display.setCursor((OLED_WIDTH - (strlen(data) * CHAR_WIDTH)), line);
   display.print(data);
 }
 
 // center size 2 text
-void printCenterBig( const char* data, int line ) {
+void printCenterBig( const char* data, uint8_t line ) {
+  display.setTextSize(2);
   display.setCursor(((OLED_WIDTH / 2) - (strlen(data) * CHAR_WIDTH)), line);
   display.print(data);
 }
 
 // center size 1 text
-void printCenter( const char* data, int line ) {
+void printCenter( const char* data, uint8_t line ) {
+  display.setTextSize(1);
   display.setCursor(((OLED_WIDTH / 2) - ((strlen(data) * CHAR_WIDTH) / 2)), line);
   display.print(data);
 }
 
-int t_update = 10;
+uint8_t t_update = 10;
 
 void loop() {
   date = "";  // clear the variables
@@ -177,7 +181,7 @@ void loop() {
   date += year(local);
 
   // format the time to 24-hour format and no seconds
-  if(hour(local) < 10)
+  if(hour(local) < 10)  // add a zero if hour is under 10
     t += "0";
   t += hour(local);
   t += ":";
@@ -199,14 +203,12 @@ void loop() {
   printRight(t_char, 0);
 
   // display sensor data (first 2 lines large)
-  display.setTextSize(2);
   String t_text =  String(temp)+" "+String(char(0xF7))+"C"; // 0xF7 = Degree Symbol
   const char* t_data = t_text.c_str();
   printCenterBig(t_data, 16);
   String h_text =  String(humi)+" %";
   const char* h_data = h_text.c_str();
   printCenterBig(h_data, 34);
-  display.setTextSize(1);
   String p_text =  String(pres)+" hPa";
   const char* p_data = p_text.c_str();
   printCenter(p_data, 56);
