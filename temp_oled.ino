@@ -3,7 +3,7 @@
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BME280.h>
 #include <ESP8266WiFi.h>
-#include <WifiUDP.h>
+#include <WiFiUdp.h>
 #include <NTPClient.h>
 #include <Time.h>
 #include <TimeLib.h>
@@ -124,6 +124,12 @@ void setup() {
     display.display();
     while (1);
   }
+  // Disable oversampling for more accurate readings
+  bme.setSampling(Adafruit_BME280::MODE_FORCED,
+                  Adafruit_BME280::SAMPLING_X1, // temperature
+                  Adafruit_BME280::SAMPLING_X1, // pressure
+                  Adafruit_BME280::SAMPLING_X1, // humidity
+                  Adafruit_BME280::FILTER_OFF   );
 }
 
 // right align text
@@ -190,6 +196,7 @@ void loop() {
   t += minute(local);
   
   // Read data from the bme280 sensor
+  bme.takeForcedMeasurement();
   float humi = bme.readHumidity();
   float temp = bme.readTemperature();
   float pres = (bme.readPressure() / 100.0F);
@@ -203,7 +210,7 @@ void loop() {
   printRight(t_char, 0);
 
   // display sensor data (first 2 lines large)
-  String t_text =  String(temp)+" "+String(char(0xF7))+"C"; // 0xF7 = Degree Symbol
+  String t_text =  String(temp)+" "+String(char(0xF7))+"C";
   const char* t_data = t_text.c_str();
   printCenterBig(t_data, 16);
   String h_text =  String(humi)+" %";
@@ -216,5 +223,4 @@ void loop() {
   // sleep for 30 secs.
   delay(30000);
 }
-
 
